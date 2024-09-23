@@ -3,9 +3,8 @@ from os import listdir
 from os.path import isfile, join
 from time import sleep, time
 from psutil import cpu_percent
+from mjpeg_streamer import MjpegServer, Stream
 import cv2
-
-FRAMETIME = 1/15
 
 app = Flask(__name__, static_folder='static/')
 web_path = '/users/root/app/web/'
@@ -14,7 +13,10 @@ image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
 
 images = [cv2.imread(images_path + file) for file in image_files]
 
-print('target frame time: ', FRAMETIME)
+stream = Stream('image_stream', size=(640, 480), fps=15)
+server = MjpegServer('0.0.0.0', 8080)
+server.add_stream(stream)
+server.start()
 
 cpu_load_stamps = []
 encode_times = []
@@ -46,13 +48,27 @@ def generate():
 
             frame_times.append(time() - frame_start)
 
-@app.route('/video')
-def index():
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 @app.route("/")
 def hello_world():
     return send_from_directory('static', 'index.html')
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # app.run(host='0.0.0.0', port=5000)
+    while True:
+        if not start_time:
+            start_time = time()
+        if time() - start_time >= 10:
+            print('average cpu load: ', sum(cpu_load_stamps)/len(cpu_load_stamps))
+            print('average image encode time: ', sum(encode_times)/len(encode_times))
+            print('average frame time: ', sum(frame_times)/len(frame_times))
+            cpu_load_stamps.clear()
+            encode_times.clear()
+            frame_times.clear()
+            start_time = time()
+        for image in images:
+            frame_start = time()
+            encode_start = time()
+            stream.set_frame(image)
+            encode_times.append(time() - encode_start)
+            cpu_load_stamps.append(cpu_percent())
+            frame_times.append(time() - frame_start)
