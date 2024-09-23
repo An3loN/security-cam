@@ -1,0 +1,2 @@
+ansible_password: "{{ vault_ansible_password }}"
+ansible_python_interpreter: /usr/bin/python3.8
