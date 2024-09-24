@@ -1,5 +1,5 @@
 ---
-- name: Start
+- name: Setup
   hosts: devices
   tasks:
     - name: Install Apt packages
@@ -13,14 +13,12 @@
         - libgl1
     - name: Copy requirements file
       copy:
-        src: ./app/requirements.txt
+        src: ../app/requirements.txt
         dest: /users/root/app/requirements.txt
     - name: Install dependencies
       pip:
         requirements : /users/root/app/requirements.txt
     - name: Copy app
       copy:
-        src: ./app/
+        src: ../app/
         dest: /users/root/app/
-    - name: start flask
-      shell: "nohup python3 /users/root/app/web/main.py"
