@@ -1,6 +1,6 @@
 var socket = io();
 socket.on('connect', function() {
-    socket.emit('hello', {data: 'I\'m connected!'});
+    socket.emit('request_video', {data: 'I\'m connected!'});
 });
 socket.on('frame', function(data) {
     image_arr = new Uint8Array(data.bytes);

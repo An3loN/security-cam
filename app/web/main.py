@@ -2,20 +2,25 @@ from flask import Flask, render_template, send_from_directory, Response
 from os import listdir
 from os.path import isfile, join
 from time import sleep, time
-from flask_socketio import SocketIO, emit
+# from flask_socketio import SocketIO, emit
+import socketio
 from psutil import cpu_percent
 import cv2
+import asyncio
+from aiohttp import web
 
 FRAMETIME = 1/15
 
 web_path = '/users/root/app/web/'
 images_path = web_path + 'images/'
-app = Flask(__name__, static_folder=web_path+'static/')
-app.config['SECRET_KEY'] = 'secret!'
-socketio = SocketIO(app)
 image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
-
 images = [cv2.imread(images_path + file) for file in image_files]
+
+
+
+sio = socketio.AsyncServer()
+app = web.Application()
+sio.attach(app)
 
 print('target frame time: ', FRAMETIME)
 
@@ -23,7 +28,37 @@ cpu_load_stamps = []
 frame_times = []
 start_time = None
 
-def generate():
+started_stream = False
+
+async def index(request):
+    """Serve the client-side application."""
+    with open(web_path+'templates/index.html') as f:
+        return web.Response(text=f.read(), content_type='text/html')
+
+@sio.event
+def connect(sid, environ):
+    print("connect ", sid)
+    loop = asyncio.get_event_loop()
+    loop.create_task(sio.enter_room(sid, 'video'))
+
+@sio.event
+async def request_video(sid, data):
+    print("message ", data)
+    global started_stream
+    if not started_stream:
+        started_stream = True
+        asyncio.ensure_future(stream_loop())
+
+@sio.event
+def disconnect(sid):
+    print('disconnect ', sid)
+    loop = asyncio.get_event_loop()
+    loop.create_task(sio.leave_room(sid, 'video'))
+
+app.router.add_static('/static', web_path + 'static')
+app.router.add_get('/', index)
+
+async def stream_loop():
     global start_time
     while True:
         if not start_time:
@@ -38,28 +73,11 @@ def generate():
             frame_start = time()
             cpu_load_stamps.append(cpu_percent())
             frame = image.tobytes()
-            emit('frame', {'bytes': frame, 'shape': images[0].shape}) 
+            await sio.emit('frame', {'bytes': frame, 'shape': images[0].shape}, room='video') 
             frame_times.append(time() - frame_start)
+            await sio.sleep(0.1)
             # if sleep_time := frame_start + FRAMETIME - time() > 0:
-            #     await asyncio.sleep(sleep_time)
-
-@socketio.on('connect')
-def on_connect(data):
-    emit('frame', {'bytes': images[0].tobytes(), 'shape': images[0].shape})
-    sleep(1)
-    emit('frame', {'bytes': images[1].tobytes(), 'shape': images[1].shape})
-    sleep(1)
-    emit('frame', {'bytes': images[2].tobytes(), 'shape': images[2].shape})
-    
-
-@app.route("/")
-def hello_world():
-    return render_template('index.html')
+            #     await sio.sleep(sleep_time)
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port=5000)
-    socketio.run(app, host='0.0.0.0', port=5050)
-
-# def somefunc():
-#     data = get_updated_data()
-#     emit('data', data)
+    web.run_app(app, host='0.0.0.0', port=5050)
