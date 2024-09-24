@@ -11,6 +11,10 @@
         - python3.8
         - python3-pip
         - libgl1
+    - name: Delete old app
+      file:
+        state: absent
+        path: /users/root/app/
     - name: Copy requirements file
       copy:
         src: ../app/requirements.txt
