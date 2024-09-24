@@ -15,6 +15,10 @@
       file:
         state: absent
         path: /users/root/app/
+    - name: Create app folder
+      file:
+        path: /users/root/app/
+        state: directory
     - name: Copy requirements file
       copy:
         src: ../app/requirements.txt
