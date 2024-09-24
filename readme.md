@@ -1,1 +1,1 @@
-![alt text](https://github.com/An3loN/[reponame]/blob/[branch]/image.jpg?raw=true)
+![alt text](https://github.com/An3loN/security-cam/blob/raw-image-sockets/report.png)
