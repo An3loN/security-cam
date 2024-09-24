@@ -1,0 +1,6 @@
+devices:
+  hosts:
+    server_test_host:
+      ansible_host: 193.42.113.121
+  vars:
+    ansible_user: root

@@ -1,0 +1,32 @@
+---
+- name: Start
+  hosts: devices
+  tasks:
+    - name: Install Apt packages
+      apt:
+        name: "{{ item }}"
+        state: present
+      become: true
+      loop:
+        - python3.8
+        - python3-pip
+        - libgl1
+    - name: Delete old app
+      file:
+        path: /users/root/app/
+        state: absent
+    - name: Create app folder
+      file:
+        path: /users/root/app/
+        state: directory
+    - name: Copy requirements file
+      copy:
+        src: ../app/requirements.txt
+        dest: /users/root/app/requirements.txt
+    - name: Install dependencies
+      pip:
+        requirements : /users/root/app/requirements.txt
+    - name: Copy app
+      copy:
+        src: ../app/
+        dest: /users/root/app/
