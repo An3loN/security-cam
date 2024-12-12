@@ -12,7 +12,9 @@ import base64
 
 FRAMETIME = 1/15
 
-web_path = '/mnt/d/Projects/Python/practice/app/web/'
+# web_path = '/users/root/app/web/'
+web_path = 'D:/Projects/Python/practice/app/web/'
+# web_path = '/mnt/d/Projects/Python/practice/app/web/'
 images_path = web_path + 'images/'
 image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
 images = [cv2.imread(images_path + file) for file in image_files]
@@ -20,6 +22,10 @@ images = [cv2.imread(images_path + file) for file in image_files]
 sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
+
+cam_port = 2
+cam = cv2.VideoCapture(cam_port) 
+print(cam.get(0))
 
 print('target frame time: ', FRAMETIME)
 
@@ -80,10 +86,11 @@ async def stream_loop():
             cpu_load_stamps.clear()
             frame_times.clear()
             start_time = time()
-        for image in images:
+        for i in range(30):
             frame_start = time()
+            result, image = cam.read()
             cpu_load_stamps.append(cpu_percent())
-
+            if not result: continue
             # Extract ORB keypoints and histogram
             keypoints = compute_orb_keypoints(image)
             histogram = compute_histogram(image)
@@ -93,7 +100,7 @@ async def stream_loop():
 
             await sio.emit('frame', {
                 'bytes': frame,
-                'shape': images[0].shape,
+                'shape': image.shape,
                 'keypoints': keypoints,
                 'histogram': histogram
             }, room='video') 
