@@ -14,13 +14,24 @@ socket.on('frame', function(data) {
 
     let imgData = ctx.createImageData(canvas.width, canvas.height);
 
-    for (let i = 0; i < image_arr.length; i+=3) {
-        let i4 = i/3*4;
-        imgData.data[i4] = image_arr[i+2];
-        imgData.data[i4+1] = image_arr[i+1];
-        imgData.data[i4+2] = image_arr[i];
-        imgData.data[i4+3] = 255;
+    if(data.shape.length < 3) {
+        for (let i = 0; i < image_arr.length; i++) {
+            let i4 = i*4;
+            imgData.data[i4] = image_arr[i];
+            imgData.data[i4+1] = image_arr[i];
+            imgData.data[i4+2] = image_arr[i];
+            imgData.data[i4+3] = 255;
+        }
+    } else {
+        for (let i = 0; i < image_arr.length; i+=3) {
+            let i4 = i/3*4;
+            imgData.data[i4] = image_arr[i+2];
+            imgData.data[i4+1] = image_arr[i+1];
+            imgData.data[i4+2] = image_arr[i];
+            imgData.data[i4+3] = 255;
+        }
     }
+    
 
     ctx.putImageData(imgData, 0, 0);
 
@@ -58,3 +69,22 @@ socket.on('frame', function(data) {
 
     Plotly.newPlot('histogramPlot', [trace], layout);
 });
+
+window.onload=function(){
+    document.getElementById('configUpload').addEventListener('change', function(event) {
+        let file = event.target.files[0];
+        if (file) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let config = JSON.parse(e.target.result);
+                    socket.emit('upload_config', {config: e.target.result});
+                    console.log('Configuration uploaded:', config);
+                } catch (err) {
+                    console.error('Invalid configuration file:', err);
+                }
+            };
+            reader.readAsText(file);
+        }
+    });
+}

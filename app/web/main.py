@@ -1,3 +1,4 @@
+import json
 from time import sleep, time
 import socketio
 import os
@@ -14,6 +15,9 @@ web_path = 'D:/Projects/Python/practice/app/web/'
 sio = socketio.AsyncServer()
 app = web.Application()
 sio.attach(app)
+
+image_binary_mode = False
+binary_threshold = 128
 
 cam_port = 2
 cam = cv2.VideoCapture(cam_port) 
@@ -52,6 +56,18 @@ def disconnect(sid):
     loop = asyncio.get_event_loop()
     loop.create_task(sio.leave_room(sid, 'video'))
 
+@sio.event
+async def upload_config(sid, data):
+    global image_binary_mode, binary_threshold
+    try:
+        config = json.loads(data['config'])
+        image_binary_mode = config.get('image_binary_mode', False)
+        binary_threshold = int(config.get('binary_threshold', 128))
+        binary_threshold = max(0, min(255, binary_threshold))  # Clamp to valid range
+        print(f"Configuration updated: image_binary_mode={image_binary_mode}, binary_threshold={binary_threshold}")
+    except Exception as e:
+        print(f"Error processing config: {e}")
+
 app.router.add_static('/static', web_path + 'static')
 app.router.add_get('/', index)
 
@@ -62,9 +78,17 @@ def compute_orb_keypoints(image):
     return keypoints_data
 
 def compute_histogram(image):
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if not image_binary_mode:
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    else:
+        gray = image
     hist = cv2.calcHist([gray], [0], None, [256], [0, 256]).flatten()
     return hist.tolist()
+
+def apply_binary_threshold(image, threshold):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    _, binary = cv2.threshold(gray, threshold, 255, cv2.THRESH_BINARY)
+    return binary
 
 async def stream_loop():
     global start_time
@@ -82,16 +106,22 @@ async def stream_loop():
             result, image = cam.read()
             cpu_load_stamps.append(cpu_percent())
             if not result: continue
+
+            # Apply binary mode if enabled
+            if image_binary_mode:
+                image_to_send = apply_binary_threshold(image, binary_threshold)
+            else:
+                image_to_send = image
+
             # Extract ORB keypoints and histogram
-            keypoints = compute_orb_keypoints(image)
-            histogram = compute_histogram(image)
+            keypoints = compute_orb_keypoints(image_to_send)
+            histogram = compute_histogram(image_to_send)
 
             # Convert image to bytes
-            frame = image.tobytes()
-
+            frame = image_to_send.tobytes()
             await sio.emit('frame', {
                 'bytes': frame,
-                'shape': image.shape,
+                'shape': image_to_send.shape,
                 'keypoints': keypoints,
                 'histogram': histogram
             }, room='video') 
