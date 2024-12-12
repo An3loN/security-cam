@@ -1,4 +1,3 @@
-from flask import Flask, render_template, send_from_directory, Response
 from os import listdir
 from os.path import isfile, join
 from time import sleep, time
@@ -11,7 +10,8 @@ from aiohttp import web
 
 FRAMETIME = 1/15
 
-web_path = '/users/root/app/web/'
+web_path = 'D:/Projects/Python/practice_2/security-cam/app/web/'
+# web_path = '/users/root/app/web/'
 images_path = web_path + 'images/'
 image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
 images = [cv2.imread(images_path + file) for file in image_files]
