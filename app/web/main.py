@@ -1,23 +1,15 @@
-from flask import Flask, render_template, send_from_directory, Response
-from os import listdir
-from os.path import isfile, join
 from time import sleep, time
 import socketio
+import os
 from psutil import cpu_percent
 import cv2
 import asyncio
 from aiohttp import web
 import numpy as np
-import base64
 
 FRAMETIME = 1/15
 
-# web_path = '/users/root/app/web/'
 web_path = 'D:/Projects/Python/practice/app/web/'
-# web_path = '/mnt/d/Projects/Python/practice/app/web/'
-images_path = web_path + 'images/'
-image_files = [f for f in listdir(images_path) if isfile(join(images_path, f))]
-images = [cv2.imread(images_path + file) for file in image_files]
 
 sio = socketio.AsyncServer()
 app = web.Application()
@@ -25,7 +17,6 @@ sio.attach(app)
 
 cam_port = 2
 cam = cv2.VideoCapture(cam_port) 
-print(cam.get(0))
 
 print('target frame time: ', FRAMETIME)
 
