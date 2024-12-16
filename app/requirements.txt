@@ -1,7 +1,5 @@
-Flask==3.0.3
 opencv-python==4.10.0.84
 psutil==6.0.0
-Flask-SocketIO==5.3.7
 aiohttp==3.10.5
 python-socketio==5.11.4
 python-dotenv==1.0.1
