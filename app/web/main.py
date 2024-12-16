@@ -1,5 +1,6 @@
 import json
 from time import sleep, time
+from dotenv import load_dotenv
 import socketio
 import os
 from psutil import cpu_percent
@@ -10,7 +11,10 @@ import numpy as np
 
 FRAMETIME = 1/15
 
-web_path = 'D:/Projects/Python/practice/app/web/'
+load_dotenv()
+
+# web_path = 'D:/Projects/Python/practice/app/web/'
+web_path = os.environ['WEB_APP_PATH']
 
 sio = socketio.AsyncServer()
 app = web.Application()
