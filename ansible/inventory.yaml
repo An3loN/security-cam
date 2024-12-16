@@ -1,6 +1,6 @@
 devices:
   hosts:
     server_test_host:
-      ansible_host: 193.42.113.121
+      ansible_host: 0.0.0.0
   vars:
     ansible_user: root

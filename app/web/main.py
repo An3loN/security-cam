@@ -13,8 +13,8 @@ FRAMETIME = 1/15
 
 load_dotenv()
 
-# web_path = 'D:/Projects/Python/practice/app/web/'
 web_path = os.environ['WEB_APP_PATH']
+cam_port = int(os.environ['WEBCAM_PORT'])
 
 sio = socketio.AsyncServer()
 app = web.Application()
@@ -23,7 +23,7 @@ sio.attach(app)
 image_binary_mode = False
 binary_threshold = 128
 
-cam_port = 2
+
 cam = cv2.VideoCapture(cam_port) 
 
 print('target frame time: ', FRAMETIME)
